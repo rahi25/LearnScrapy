@@ -1,0 +1,59 @@
+import scrapy
+from ..items import QuotetutorialItem
+
+class QuoteSpider(scrapy.Spider):
+    # define variable and it is important to write them exactly
+    name = 'quotes'
+    page_number = 2
+    start_urls = [
+        'http://quotes.toscrape.com/page/1/'
+    ]
+
+    ## try 1:
+
+    # def parse(self, response):
+    #     title = response.css('title::text').extract()
+    #     yield {'titletext': title}
+
+    ## try 2:
+
+    # def parse(self, response):
+    #     all_div_quotes = response.css("div.quote")
+    #     for quotes in all_div_quotes:
+    #
+    #         quote = quotes.css("span.text::text").extract()
+    #         author = quotes.css(".author::text").extract()
+    #         tag = quotes.css(".tag::text").extract()
+    #         yield {
+    #             "Quote": quote,
+    #             "Author": author,
+    #             "Tags": tag
+    #         }
+
+    ## try 3:
+
+    def parse(self, response):
+        items = QuotetutorialItem()
+
+        all_div_quotes = response.css("div.quote")
+        for quotes in all_div_quotes:
+            quote = quotes.css("span.text::text").extract()
+            author = quotes.css(".author::text").extract()
+            tag = quotes.css(".tag::text").extract()
+
+            items['quote'] = quote
+            items['author'] = author
+            items['tag'] = tag
+
+            yield items
+
+        # Pagination
+        next_page = 'http://quotes.toscrape.com/page/' + str(QuoteSpider.page_number) + '/'
+        if QuoteSpider.page_number < 11:
+            QuoteSpider.page_number += 1
+            yield response.follow(next_page, callback=self.parse)
+
+        # Following link
+        """next_page = response.css('li.next a::attr(href)').get()
+        if next_page is not None:
+            yield response.follow(next_page, callback=self.parse)"""
